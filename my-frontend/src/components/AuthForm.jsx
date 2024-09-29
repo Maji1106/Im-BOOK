@@ -1,52 +1,51 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const AuthForm = ({ isLogin }) => {
+const AuthForm = () => {
     const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [isLogin, setIsLogin] = useState(true);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const url = isLogin ? '/api/login' : '/api/register';
         try {
-            const response = isLogin 
-                ? await axios.post('http://localhost:5000/api/auth/login', { username, password })
-                : await axios.post('http://localhost:5000/api/auth/register', { username, email, password });
-            
-            // Save token
-            localStorage.setItem('token', response.data.token);
-            // Redirect or update user state
+            const response = await axios.post(url, { username, password });
+            console.log('Response:', response.data);
+            if (isLogin) {
+                localStorage.setItem('token', response.data.token);
+            } else {
+                alert('User registered successfully!');
+            }
         } catch (error) {
-            // Handle error
+            console.error('Error:', error.response?.data?.message);
         }
     };
+
     return (
-        <form onSubmit={handleSubmit}>
-            <input
-                type="text"
-                placeholder="ชื่อผู้ใช้"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-            />
-            {!isLogin && (
-                <input
-                    type="email"
-                    placeholder="อีเมล"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+        <div>
+            <h2>{isLogin ? 'Login' : 'Register'}</h2>
+            <form onSubmit={handleSubmit}>
+                <input 
+                    type="text"
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     required
                 />
-            )}
-            <input
-                type="password"
-                placeholder="รหัสผ่าน"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-            />
-            <button type="submit">{isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'}</button>
-        </form>
+                <input 
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                />
+                <button type="submit">{isLogin ? 'Login' : 'Register'}</button>
+            </form>
+            <button onClick={() => setIsLogin(!isLogin)}>
+                {isLogin ? 'Go to Register' : 'Go to Login'}
+            </button>
+        </div>
     );
 };
 

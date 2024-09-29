@@ -1,27 +1,33 @@
+// server.js
 const express = require('express');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const cors = require('cors');
+
 const app = express();
-const mysql = require('mysql2');
+app.use(cors());
+app.use(express.json());
 
-// สร้างการเชื่อมต่อกับฐานข้อมูล MySQL
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',  // เปลี่ยนรหัสผ่านให้ตรงกับที่คุณตั้งไว้
-    database: 'mar'    // เปลี่ยนชื่อฐานข้อมูลให้ตรงกับที่คุณใช้
+const users = []; // จำลองฐานข้อมูลผู้ใช้
+
+app.post('/register', async (req, res) => {
+    const { username, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    users.push({ username, password: hashedPassword });
+    res.status(201).send('User registered');
 });
 
-// สร้าง endpoint สำหรับดึงข้อมูลผลิตภัณฑ์
-app.get('/api/products', (req, res) => {
-    db.query('SELECT * FROM products', (err, results) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        res.json(results);
-    });
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    const user = users.find(user => user.username === username);
+    if (user && await bcrypt.compare(password, user.password)) {
+        const token = jwt.sign({ username: user.username }, 'secret_key', { expiresIn: '1h' });
+        res.json({ token });
+    } else {
+        res.status(401).send('Invalid credentials');
+    }
 });
 
-// ฟังที่ port 5100
-app.listen(5100, () => {
-    console.log('Server running on port 5100');
+app.listen(5000, () => {
+    console.log('Server running on http://localhost:5000');
 });
-
